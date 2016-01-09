@@ -24,6 +24,7 @@ in {
       location / {
         fastcgi_pass   unix:${config.services.fcgiwrap.socketAddress};
         fastcgi_param  SCRIPT_FILENAME ${cgip}/bin/cgip;
+        include        ${pkgs.nginx}/conf/fastcgi_params;
       }
     }
   '';
