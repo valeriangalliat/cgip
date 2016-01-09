@@ -3,27 +3,33 @@ cgip
 
 > CGI IP echo service.
 
-Installation
-------------
+Deployment
+----------
 
-```
-git clone https://github.com/valeriangalliat/cgip.git
-cd cgip
-make
-```
+Example deployment on a NixOS system (import the following web server
+configuration in your `configuration.nix`):
 
-Then, add the following in your nginx `http` block (tweak the FastCGI
-server location if needed):
+```nix
+{ config, pkgs, ... }:
 
-```nginx
-server {
-    listen       80;
-    server_name  ip.example.com;
+let cgip = pkgs.callPackage /path/to/cgip {};
+in {
+  services.nginx.enable = true;
 
-    location / {
-        fastcgi_pass   unix:/var/run/fcgiwrap/fcgiwrap.sock;
-        fastcgi_param  SCRIPT_FILENAME /path/to/cgip/cgip;
-        include        fastcgi_params;
+  services.nginx.httpConfig = ''
+    server {
+      listen       80;
+      server_name  _;
+
+      location / {
+        fastcgi_pass   unix:${config.services.fcgiwrap.socketAddress};
+        fastcgi_param  SCRIPT_FILENAME ${cgip}/bin/cgip;
+      }
     }
+  '';
+
+  services.fcgiwrap.enable = true;
+
+  networking.firewall.allowedTCPPorts = [ 80 ];
 }
 ```
